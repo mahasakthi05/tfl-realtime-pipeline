@@ -1,0 +1,21 @@
+name: AWS Connection Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Show Repository Files
+        run: |
+          pwd
+          ls -la
