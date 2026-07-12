@@ -59,7 +59,7 @@ Resources:
       Code:
         S3Bucket: tfl-deployment-artifacts-maha1
         S3Key: lambda-v2.zip
-      Environment:
+        Environment:
         Variables:
           BUCKET_NAME: !Ref BronzeBucket
 
