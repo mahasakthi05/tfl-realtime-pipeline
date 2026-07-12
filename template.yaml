@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: TfL Real Time Monitoring Pipeline
+
+Resources:
+
+  BronzeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "tfl-bronze-${AWS::AccountId}"
+
+Outputs:
+
+  BronzeBucketName:
+    Value: !Ref BronzeBucket
