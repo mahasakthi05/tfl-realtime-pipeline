@@ -1,4 +1,4 @@
-name: AWS Connection Test
+name: Deploy AWS Infrastructure
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  aws-test:
+
+  deploy:
 
     runs-on: ubuntu-latest
 
@@ -22,5 +23,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
 
-      - name: Verify AWS Login
-        run: aws sts get-caller-identity
+      - name: Validate Template
+        run: |
+          aws cloudformation validate-template \
+          --template-body file://template.yaml
+
+      - name: Deploy Stack
+        run: |
+          aws cloudformation deploy \
+          --stack-name tfl-project \
+          --template-file template.yaml
