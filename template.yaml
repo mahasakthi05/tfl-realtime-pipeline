@@ -38,6 +38,11 @@ Resources:
                   - s3:PutObject
                 Resource: "*"
 
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+
   TflLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -59,10 +64,37 @@ Resources:
         Variables:
           BUCKET_NAME: !Ref BronzeBucket
 
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: TflEvery5Minutes
+
+      ScheduleExpression: rate(5 minutes)
+
+      State: ENABLED
+
+      Targets:
+        - Arn: !GetAtt TflLambda.Arn
+          Id: LambdaTarget
+
+  EventBridgePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref TflLambda
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt EventBridgeRule.Arn
+
 Outputs:
 
   BronzeBucketName:
+    Description: Bronze S3 Bucket
     Value: !Ref BronzeBucket
 
   LambdaFunctionName:
+    Description: Lambda Function Name
     Value: !Ref TflLambda
+
+  EventBridgeRuleName:
+    Description: EventBridge Rule Name
+    Value: !Ref EventBridgeRule
