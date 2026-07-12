@@ -1,29 +1,86 @@
-import json
-import os
-import boto3
-import requests
-from datetime import datetime
+AWSTemplateFormatVersion: '2010-09-09'
 
-s3 = boto3.client("s3")
+Description: TfL Real Time Monitoring Pipeline
 
-BUCKET_NAME = os.environ["BUCKET_NAME"]
+Resources:
 
-API_URL = "https://api.tfl.gov.uk/line/244/arrivals"
+  BronzeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "tfl-bronze-${AWS::AccountId}"
 
-def lambda_handler(event, context):
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: TflLambdaRole
 
-    response = requests.get(API_URL)
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
 
-    data = response.json()
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
-    file_name = datetime.utcnow().strftime("%Y%m%d_%H%M%S") + ".json"
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
 
-    s3.put_object(
-        Bucket=BUCKET_NAME,
-        Key=f"raw/{file_name}",
-        Body=json.dumps(data)
-    )
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: "*"
 
-    return {
-        "statusCode": 200
-    }
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+
+  TflLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: TflArrivalIngestion
+
+      Runtime: python3.12
+
+      Handler: tfl_ingestion.lambda_handler
+
+      Timeout: 60
+
+      Role: !GetAtt LambdaRole.Arn
+
+      Code:
+        S3Bucket: tfl-deployment-artifacts-maha1
+        S3Key: lambda-v2.zip
+
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref BronzeBucket
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: TflEvery5Minutes
+
+      ScheduleExpression: rate(5 minutes)
+
+      State: ENABLED
+
+      Targets:
+        - Arn: !GetAtt TflLambda.Arn
+          Id: LambdaTarget
+
+  EventBridgePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref TflLambda
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt 
