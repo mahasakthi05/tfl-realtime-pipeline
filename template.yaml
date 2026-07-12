@@ -59,7 +59,8 @@ Resources:
       Code:
         S3Bucket: tfl-deployment-artifacts-maha1
         S3Key: lambda-v2.zip
-        Environment:
+
+      Environment:
         Variables:
           BUCKET_NAME: !Ref BronzeBucket
 
@@ -87,13 +88,10 @@ Resources:
 Outputs:
 
   BronzeBucketName:
-    Description: Bronze S3 Bucket
     Value: !Ref BronzeBucket
 
   LambdaFunctionName:
-    Description: Lambda Function Name
     Value: !Ref TflLambda
 
   EventBridgeRuleName:
-    Description: EventBridge Rule Name
     Value: !Ref EventBridgeRule
