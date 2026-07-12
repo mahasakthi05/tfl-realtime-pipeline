@@ -30,6 +30,7 @@ jobs:
 
       - name: Deploy Stack
         run: |
-          aws cloudformation deploy \
-          --stack-name tfl-project \
-          --template-file template.yaml
+         aws cloudformation deploy \
+         --stack-name tfl-project \
+         --template-file template.yaml \
+         --capabilities CAPABILITY_NAMED_IAM
